@@ -1,0 +1,12 @@
+@keyframes popup {
+    from {
+        transform: scale(0);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+#success { 
+    animation: popup 0.5s ease-in-out;
+}
