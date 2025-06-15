@@ -13,16 +13,23 @@ router.get('/me', verifyToken, async (req, res) => {
         const user = await User.findOne({ uid }).select('-cart');
         
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
         }
 
         res.json({
+            success: true,
             message: 'User details retrieved successfully',
             user
         });
     } catch (error) {
         console.error('Get user details error:', error);
-        res.status(500).json({ message: 'Error fetching user details' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error fetching user details' 
+        });
     }
 });
 
@@ -33,13 +40,19 @@ router.post('/register', async (req, res) => {
 
         // Validate required fields
         if (!uid) {
-            return res.status(400).json({ message: 'User ID is required' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'User ID is required' 
+            });
         }
 
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { uid }] });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'User already exists' 
+            });
         }
 
         // Create new user
@@ -53,12 +66,16 @@ router.post('/register', async (req, res) => {
         await user.save();
 
         res.status(201).json({
+            success: true,
             message: 'User registered successfully',
         });
 
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ message: `Error registering user ${error}` });
+        res.status(500).json({ 
+            success: false,
+            message: `Error registering user ${error}` 
+        });
     }
 });
 
@@ -75,13 +92,23 @@ router.put('/phone', verifyToken, async (req, res) => {
         );
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
         }
 
-        res.json({ message: 'Phone number updated successfully', user });
+        res.json({ 
+            success: true,
+            message: 'Phone number updated successfully', 
+            user 
+        });
     } catch (error) {
         console.error('Phone update error:', error);
-        res.status(500).json({ message: 'Error updating phone number' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error updating phone number' 
+        });
     }
 });
 
@@ -91,18 +118,36 @@ router.post('/address', verifyToken, async (req, res) => {
         const uid = req.user;
         const { label, lane, state, city, pinCode } = req.body;
 
+        // Validate required fields
+        if (!label || !lane || !state || !city || !pinCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'All address fields are required'
+            });
+        }
+
         const user = await User.findOne({ uid });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
         }
 
         user.addresses.push({ label, lane, state, city, pinCode });
         await user.save();
 
-        res.status(201).json({ message: 'Address added successfully', user });
+        res.status(201).json({ 
+            success: true,
+            message: 'Address added successfully', 
+            user 
+        });
     } catch (error) {
         console.error('Add address error:', error);
-        res.status(500).json({ message: 'Error adding address' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error adding address' 
+        });
     }
 });
 
@@ -113,27 +158,49 @@ router.put('/address/:addressId', verifyToken, async (req, res) => {
         const { addressId } = req.params;
         const { label, lane, state, city, pinCode } = req.body;
 
+        // Validate required fields
+        if (!label || !lane || !state || !city || !pinCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'All address fields are required'
+            });
+        }
+
         const user = await User.findOne({ uid });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
         }
 
         const address = user.addresses.id(addressId);
         if (!address) {
-            return res.status(404).json({ message: 'Address not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Address not found' 
+            });
         }
 
-        address.label = label || address.label;
-        address.lane = lane || address.lane;
-        address.state = state || address.state;
-        address.city = city || address.city;
-        address.pinCode = pinCode || address.pinCode;
+        // Update address fields
+        address.label = label;
+        address.lane = lane;
+        address.state = state;
+        address.city = city;
+        address.pinCode = pinCode;
 
         await user.save();
-        res.json({ message: 'Address updated successfully', user });
+        res.json({ 
+            success: true,
+            message: 'Address updated successfully', 
+            user 
+        });
     } catch (error) {
         console.error('Update address error:', error);
-        res.status(500).json({ message: 'Error updating address' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error updating address' 
+        });
     }
 });
 
@@ -145,16 +212,34 @@ router.delete('/address/:addressId', verifyToken, async (req, res) => {
 
         const user = await User.findOne({ uid });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
+        }
+
+        const address = user.addresses.id(addressId);
+        if (!address) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Address not found' 
+            });
         }
 
         user.addresses.pull(addressId);
         await user.save();
 
-        res.json({ message: 'Address deleted successfully', user });
+        res.json({ 
+            success: true,
+            message: 'Address deleted successfully', 
+            user 
+        });
     } catch (error) {
         console.error('Delete address error:', error);
-        res.status(500).json({ message: 'Error deleting address' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error deleting address' 
+        });
     }
 });
 
@@ -165,13 +250,22 @@ router.get('/address', verifyToken, async (req, res) => {
         const user = await User.findOne({ uid });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
         }
 
-        res.json({ addresses: user.addresses });
+        res.json({ 
+            success: true,
+            addresses: user.addresses 
+        });
     } catch (error) {
         console.error('Get addresses error:', error);
-        res.status(500).json({ message: 'Error fetching addresses' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error fetching addresses' 
+        });
     }
 });
 

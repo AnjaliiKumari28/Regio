@@ -361,6 +361,14 @@ router.post('/order/:orderId/item/:itemId/rate', verifyToken, async (req, res) =
             });
         }
 
+        // Check if already rated
+        if (item.rating > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Item has already been rated' 
+            });
+        }
+
         // Update order item rating
         item.rating = rating;
         await order.save();
@@ -368,8 +376,8 @@ router.post('/order/:orderId/item/:itemId/rate', verifyToken, async (req, res) =
         // Update product rating
         const product = await Product.findById(item.productId);
         if (product) {
-            const newRatingCount = product.ratingCount + 1;
-            const newRating = ((product.rating * product.ratingCount) + rating) / newRatingCount;
+            const newRatingCount = (product.ratingCount || 0) + 1;
+            const newRating = ((product.rating || 0) * (product.ratingCount || 0) + rating) / newRatingCount;
             
             await Product.findByIdAndUpdate(item.productId, {
                 rating: newRating,
@@ -383,7 +391,11 @@ router.post('/order/:orderId/item/:itemId/rate', verifyToken, async (req, res) =
             order 
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Error updating rating:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error updating rating' 
+        });
     }
 });
 

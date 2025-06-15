@@ -66,50 +66,10 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true
+        required: false
     },
-    addresses: [{
-        label: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        lane: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        state: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        city: {
-            type: String,
-            required: true,
-            trim: true
-        },
-        pinCode: {
-            type: String,
-            required: true,
-            trim: true
-        }
-    }],
-    cart: [{
-        product_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Product',
-            required: true
-        },
-        variety_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true
-        },
-        option_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true
-        },
-    }],
+    addresses: [addressSchema],
+    cart: [cartItemSchema],
     wishlist: [{
         product_id: {
             type: mongoose.Schema.Types.ObjectId,

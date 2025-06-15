@@ -6,11 +6,20 @@ const router = express.Router();
 // Get all product types with complete details
 router.get('/product-types', async (req, res) => {
     try {
+        console.log('Fetching product types...');
         const productTypes = await ProductType.find({});
+        console.log(`Found ${productTypes.length} product types`);
         res.status(200).json(productTypes);
     } catch (error) {
         console.error('Error fetching product types:', error);
-        res.status(500).json({ error: 'Failed to fetch product types' });
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            error: 'Failed to fetch product types',
+            details: error.message 
+        });
     }
 });
 

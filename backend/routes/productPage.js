@@ -450,4 +450,117 @@ router.get('/similar-products/:productId', async (req, res) => {
     }
 });
 
+// Get products from same state based on product type
+router.get('/same-state-products/:productTypeId', async (req, res) => {
+    try {
+        const { productTypeId } = req.params;
+
+        // First get the product type to find its state
+        const productType = await ProductType.findById(productTypeId);
+        if (!productType) {
+            return res.status(404).json({ message: 'Product type not found' });
+        }
+
+        const state = productType.state;
+
+        // Find other product types from the same state
+        const sameStateProductTypes = await ProductType.find({ 
+            state: state,
+            _id: { $ne: productTypeId } // Exclude the current product type
+        }).limit(20);
+
+        // Get all product IDs from these product types
+        const productTypeIds = sameStateProductTypes.map(pt => pt._id);
+
+        // Find products with these product types
+        const products = await Product.find({
+            productType: { $in: productTypeIds },
+            isActive: true
+        }).populate('productType', 'name state city');
+
+        // Format the response
+        const formattedProducts = products.map(product => {
+            const firstVariety = product.varieties[0];
+            const firstOption = firstVariety?.options[0];
+            
+            return {
+                product_id: product._id,
+                productName: product.productName,
+                imageUrl: firstVariety?.images[0] || null,
+                rating: product.rating,
+                ratingCount: product.ratingCount,
+                price: firstOption?.price || null,
+                mrp: firstOption?.mrp || null,
+                state: product.productType.state,
+                city: product.productType.city,
+                productTypeName: product.productType.name
+            };
+        });
+
+        res.json({
+            state: state,
+            products: formattedProducts
+        });
+
+    } catch (error) {
+        console.error('Error fetching same state products:', error);
+        res.status(500).json({ 
+            message: 'Error fetching same state products', 
+            error: error.message 
+        });
+    }
+});
+
+// Get products from same category
+router.get('/same-category-products/:productId', async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        // First get the product to find its category
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        const category = product.productCategory;
+
+        // Find other products from the same category
+        const sameCategoryProducts = await Product.find({ 
+            productCategory: category,
+            _id: { $ne: productId }, // Exclude the current product
+            isActive: true
+        }).limit(20);
+
+        // Format the response
+        const formattedProducts = sameCategoryProducts.map(product => {
+            const firstVariety = product.varieties[0];
+            const firstOption = firstVariety?.options[0];
+            
+            return {
+                product_id: product._id,
+                productName: product.productName,
+                imageUrl: firstVariety?.images[0] || null,
+                rating: product.rating,
+                ratingCount: product.ratingCount,
+                price: firstOption?.price || null,
+                mrp: firstOption?.mrp || null,
+                category: product.productCategory,
+                productTypeName: product.productTypeName
+            };
+        });
+
+        res.json({
+            category: category,
+            products: formattedProducts
+        });
+
+    } catch (error) {
+        console.error('Error fetching same category products:', error);
+        res.status(500).json({ 
+            message: 'Error fetching same category products', 
+            error: error.message 
+        });
+    }
+});
+
 export default router;

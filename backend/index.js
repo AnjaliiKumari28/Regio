@@ -10,6 +10,8 @@ import searchRoutes from './routes/search.js';
 import productPageRoutes from './routes/productPage.js';
 import userProfileRoutes from './routes/userProfile.js';
 import userOrderRoutes from './routes/userOrder.js';
+import sellerOrderRoutes from './routes/sellerOrder.js';
+import homePageRoutes from './routes/homePage.js';
 
 // Create Express app
 const app = express();
@@ -43,7 +45,8 @@ app.use('/search', searchRoutes);
 app.use('/regio-store', productPageRoutes);
 app.use('/user', userProfileRoutes);
 app.use('/user/order', userOrderRoutes);
-
+app.use('/regio-store/order', sellerOrderRoutes);
+app.use('/regio-store/home', homePageRoutes);
 // Start the server
 app.listen(3000, () => {
     console.log("Server running on port 3000");

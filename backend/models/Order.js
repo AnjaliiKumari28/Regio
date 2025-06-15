@@ -39,9 +39,11 @@ const orderSchema = new mongoose.Schema({
             cancellationReason: String,
             refundStatus: {
                 type: String,
-                enum: ['Pending', 'Processed', 'Not Applicable'],
+                enum: ['Pending', 'Approved', 'Rejected', 'Not Applicable'],
                 default: 'Not Applicable'
             },
+            refundReason: String,
+            refundRejectionReason: String,
             rating: {
                 type: Number,
                 min: 0,
