@@ -6,7 +6,7 @@ import { HiOutlineUser } from "react-icons/hi2";
 import Tooltip from './Tooltip';
 import { IoMdHeartEmpty } from "react-icons/io";
 
-const Navbar = ({ showSearch, showWishlist, showProfile }) => {
+const Navbar = ({ showSearch, showWishlist, showProfile, showCart = true }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
 
@@ -28,12 +28,12 @@ const Navbar = ({ showSearch, showWishlist, showProfile }) => {
 
             {showSearch && (
                 <form onSubmit={handleSearch} className='w-full max-w-2xl mx-4 flex items-center justify-between bg-white xl:py-2 py-2 lg:px-5 md:px-3 px-2 rounded-full'>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder='Search for a product' 
-                        className='bg-transparent px-2 w-full focus:outline-none placeholder-hippie-green-900 text-hippie-green-950 font-medium placeholder:font-normal text-sm md:text-base' 
+                        placeholder='Search for a product'
+                        className='bg-transparent px-2 w-full focus:outline-none placeholder-hippie-green-900 text-hippie-green-950 font-medium placeholder:font-normal text-sm md:text-base'
                     />
                     <button type="submit" className='flex-shrink-0'>
                         <IoSearch className='xl:text-2xl lg:text-2xl md:text-2xl text-xl text-hippie-green-600' />
@@ -42,17 +42,14 @@ const Navbar = ({ showSearch, showWishlist, showProfile }) => {
             )}
 
             <div className='flex items-center justify-center xl:gap-5 lg:gap-5 md:gap-3 gap-2 flex-shrink-0'>
-                <Tooltip text={'Cart'}>
-                    <Link to={'/cart'} className='hover:scale-110 transition-transform'>
-                        <IoCartOutline className='xl:text-3xl lg:text-3xl md:text-3xl text-2xl text-hippie-green-800' />
-                    </Link>
-                </Tooltip>
-                
-                {showProfile && <Tooltip text={'Profile'}>
-                    <Link to={'/profile'} className='hover:scale-110 transition-transform'>
-                        <HiOutlineUser className='xl:text-3xl lg:text-3xl md:text-3xl text-2xl text-hippie-green-800' />
-                    </Link>
-                </Tooltip> }
+                {showCart && (
+                    <Tooltip text={'Cart'}>
+                        <Link to={'/cart'} className='hover:scale-110 transition-transform'>
+                            <IoCartOutline className='xl:text-3xl lg:text-3xl md:text-3xl text-2xl text-hippie-green-800' />
+                        </Link>
+                    </Tooltip>
+                )}
+
 
                 {showWishlist && (
                     <Tooltip text={'Wishlist'}>
@@ -62,6 +59,13 @@ const Navbar = ({ showSearch, showWishlist, showProfile }) => {
                     </Tooltip>
                 )}
 
+                {showProfile && (
+                    <Tooltip text={'Profile'}>
+                        <Link to={'/profile'} className='hover:scale-110 transition-transform'>
+                            <HiOutlineUser className='xl:text-3xl lg:text-3xl md:text-3xl text-2xl text-hippie-green-800' />
+                        </Link>
+                    </Tooltip>
+                )}
             </div>
         </div>
     )

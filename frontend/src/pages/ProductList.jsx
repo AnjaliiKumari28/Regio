@@ -97,9 +97,9 @@ const ProductList = () => {
             <Navbar showSearch={true} />
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
                 <div className="max-w-md text-center space-y-6">
-                    <img 
-                        src="/no-results.png" 
-                        alt="No results found" 
+                    <img
+                        src="/no-results.png"
+                        alt="No results found"
                         className="w-64 h-64 object-contain mx-auto"
                     />
                     <div className="space-y-2">
@@ -107,11 +107,11 @@ const ProductList = () => {
                             No Products Found
                         </h2>
                         <p className="text-gray-600">
-                            {query 
-                                ? `We couldn't find any products matching "${decodeURIComponent(query)}".` 
-                                : category 
-                                    ? `We couldn't find any products in the ${category} category.` 
-                                    : productType 
+                            {query
+                                ? `We couldn't find any products matching "${decodeURIComponent(query)}".`
+                                : category
+                                    ? `We couldn't find any products in the ${category} category.`
+                                    : productType
                                         ? `We couldn't find any products of type ${productType}.`
                                         : "We couldn't find any products matching your search."}
                         </p>
@@ -132,7 +132,7 @@ const ProductList = () => {
 
     return (
         <>
-            <Navbar showSearch={true} showProfile={true}/>
+            <Navbar showSearch={true} showProfile={true} />
             <div className='w-full min-h-screen bg-gray-50 pt-10'>
                 <div className='w-full px-3 md:px-8 lg:px-10 py-8'>
                     <div className='flex flex-col gap-6'>
@@ -148,7 +148,7 @@ const ProductList = () => {
                                         <span className="font-medium">{getFilterLabel()}</span>
                                         <FaChevronDown className={`transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
                                     </button>
-                                    
+
                                     {isFilterOpen && (
                                         <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-10">
                                             <div className="space-y-4">
@@ -156,8 +156,8 @@ const ProductList = () => {
                                                     <h3 className="text-sm font-medium text-gray-700 mb-2">Sort By</h3>
                                                     <div className="space-y-2">
                                                         {['relevance', 'popularity', 'priceLowToHigh', 'priceHighToLow'].map(option => (
-                                                            <label 
-                                                                key={option} 
+                                                            <label
+                                                                key={option}
                                                                 className="flex items-center gap-2 cursor-pointer"
                                                                 onClick={() => handleFilterChange('sortBy', option)}
                                                             >
@@ -173,20 +173,20 @@ const ProductList = () => {
                                                                 </span>
                                                                 <span className="text-sm text-gray-700">
                                                                     {option === 'priceLowToHigh' ? 'Price: Low to High' :
-                                                                     option === 'priceHighToLow' ? 'Price: High to Low' :
-                                                                     option.charAt(0).toUpperCase() + option.slice(1)}
+                                                                        option === 'priceHighToLow' ? 'Price: High to Low' :
+                                                                            option.charAt(0).toUpperCase() + option.slice(1)}
                                                                 </span>
                                                             </label>
                                                         ))}
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div>
                                                     <h3 className="text-sm font-medium text-gray-700 mb-2">Rating</h3>
                                                     <div className="space-y-2">
                                                         {['3', '4'].map(rating => (
-                                                            <label 
-                                                                key={rating} 
+                                                            <label
+                                                                key={rating}
                                                                 className="flex items-center gap-2 cursor-pointer"
                                                                 onClick={() => handleFilterChange('rating', rating)}
                                                             >
@@ -219,7 +219,7 @@ const ProductList = () => {
                                     onClick={() => {
                                         navigate(`/product/${item.productId}/${item.varietyId}`);
                                     }}
-                                    key={item._id} 
+                                    key={item._id}
                                     className='group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 cursor-pointer'
                                 >
                                     {/* Image Container */}
@@ -229,38 +229,37 @@ const ProductList = () => {
                                                 key={index}
                                                 src={image}
                                                 alt={item.name}
-                                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
-                                                    index === 0 ? 'opacity-100' : 'opacity-0'
-                                                }`}
+                                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${index === 0 ? 'opacity-100' : 'opacity-0'
+                                                    }`}
                                                 onMouseEnter={(e) => {
                                                     let currentIndex = 0;
                                                     const totalImages = item.images.length;
-                                                    
+
                                                     const switchImage = () => {
                                                         // Hide all images
                                                         item.images.forEach((_, i) => {
                                                             const img = e.target.parentElement.children[i];
                                                             img.style.opacity = '0';
                                                         });
-                                                        
+
                                                         // Show current image
                                                         const currentImg = e.target.parentElement.children[currentIndex];
                                                         currentImg.style.opacity = '1';
-                                                        
+
                                                         // Move to next image
                                                         currentIndex = (currentIndex + 1) % totalImages;
-                                                        
+
                                                         // Schedule next switch
                                                         e.target.hoverInterval = setTimeout(switchImage, 1500);
                                                     };
-                                                    
+
                                                     // Start the sequence
                                                     e.target.hoverInterval = setTimeout(switchImage, 500);
                                                 }}
                                                 onMouseLeave={(e) => {
                                                     // Clear the interval
                                                     clearTimeout(e.target.hoverInterval);
-                                                    
+
                                                     // Reset to first image
                                                     item.images.forEach((_, i) => {
                                                         const img = e.target.parentElement.children[i];
@@ -276,7 +275,7 @@ const ProductList = () => {
                                         <h3 className='text-sm text-gray-900 line-clamp-2 h-10 font-semibold'>
                                             {item.name}
                                         </h3>
-                                        
+
                                         <div className='flex items-center justify-between pt-2'>
                                             <div className=' flex flex-col items-center gap-1'>
                                                 <p className='text-base sm:text-lg font-semibold text-gray-900'>₹{item.price}</p>
@@ -284,10 +283,10 @@ const ProductList = () => {
                                                     <p className='text-xs text-gray-500 line-through'>₹{item.mrp}</p>
                                                 )}
                                             </div>
-                                            
+
                                             <div className='flex flex-col items-center gap-1'>
                                                 <div className='flex items-center gap-1 bg-hippie-green-50 px-2 py-1 rounded-full'>
-                                                    <span className='text-sm font-medium text-hippie-green-700'>{item.rating}</span>
+                                                    <span className='text-sm font-medium text-hippie-green-700'>{(item.rating).toFixed(1)}</span>
                                                     <FaStar className='text-yellow-400 text-sm' />
                                                 </div>
                                                 <span className='text-xs text-gray-500'>({item.ratingCount})</span>

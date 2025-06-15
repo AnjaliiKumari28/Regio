@@ -120,7 +120,8 @@ const PaymentPopup = ({ amount, onClose, onSuccess }) => {
             setProcessingPayment(true);
             // Simulate payment processing
             await new Promise(resolve => setTimeout(resolve, 2000));
-            onSuccess(paymentMethod);
+            // For COD, pass 'COD' as the payment method
+            onSuccess(paymentMethod === 'cod' ? 'COD' : paymentMethod.toUpperCase());
         } catch (error) {
             console.error('Payment error:', error);
         } finally {

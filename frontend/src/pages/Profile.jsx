@@ -138,12 +138,17 @@ const Profile = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_SERVER_URL}/user/address/${id}`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
+            const response = await axios.delete(
+                `${import.meta.env.VITE_SERVER_URL}/user/address/${id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
                 }
-            });
-            fetchUserDetails();
+            );
+            if (response.data.success) {
+                fetchUserDetails();
+            }
         } catch (error) {
             setError('Error deleting address');
             console.error('Error:', error);
@@ -153,6 +158,8 @@ const Profile = () => {
     const handleEdit = (address) => {
         setEditingId(address._id);
         setSelectedState(address.state);
+        const tempList = stateCity.find((item) => address.state === item.state)?.districts;
+        setCityList(tempList || []);
         formik.setValues({
             label: address.label,
             lane: address.lane,
@@ -184,8 +191,9 @@ const Profile = () => {
         validationSchema,
         onSubmit: async (values) => {
             try {
+                setError(null);
                 if (editingId) {
-                    await axios.put(
+                    const response = await axios.put(
                         `${import.meta.env.VITE_SERVER_URL}/user/address/${editingId}`,
                         values,
                         {
@@ -194,8 +202,16 @@ const Profile = () => {
                             }
                         }
                     );
+                    if (response.data.success) {
+                        await fetchUserDetails();
+                        setShowForm(false);
+                        setEditingId(null);
+                        formik.resetForm();
+                    } else {
+                        setError(response.data.message || 'Error updating address');
+                    }
                 } else {
-                    await axios.post(
+                    const response = await axios.post(
                         `${import.meta.env.VITE_SERVER_URL}/user/address`,
                         values,
                         {
@@ -204,14 +220,17 @@ const Profile = () => {
                             }
                         }
                     );
+                    if (response.data.success) {
+                        await fetchUserDetails();
+                        setShowForm(false);
+                        formik.resetForm();
+                    } else {
+                        setError(response.data.message || 'Error adding address');
+                    }
                 }
-                fetchUserDetails();
-                setShowForm(false);
-                setEditingId(null);
-                formik.resetForm();
             } catch (error) {
-                setError('Error saving address');
                 console.error('Error:', error);
+                setError(error.response?.data?.message || 'Error saving address');
             }
         }
     });

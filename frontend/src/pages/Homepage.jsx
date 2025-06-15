@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Homepage = () => {
   const [productTypes, setProductTypes] = useState([]);
+  const [randomProducts, setRandomProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -19,19 +21,46 @@ const Homepage = () => {
     navigate(`/search/category/${categoryName}`);
   };
 
+  // Function to fetch random 5 products
+  const fetchRandomFive = async () => {
+    try {
+      const response = await axios.get(`${SERVER_URL}/regio-store/home/random-five`);
+      setProductTypes(response.data.data);
+    } catch (error) {
+      console.error('Error fetching random five products:', error);
+    }
+  };
+
+  // Function to fetch random 20 products
+  const fetchRandomTwenty = async () => {
+    try {
+      const response = await axios.get(`${SERVER_URL}/regio-store/home/random-twenty`);
+      setRandomProducts(response.data.data);
+    } catch (error) {
+      console.error('Error fetching random twenty products:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchProductTypes = async () => {
+    const initialFetch = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${SERVER_URL}/regio-store/product-types/product-types`);
-        setProductTypes(response.data);
+        // Fetch both random five and twenty products initially
+        await Promise.all([fetchRandomFive(), fetchRandomTwenty()]);
       } catch (error) {
-        console.error('Error fetching product types:', error);
+        console.error('Error in initial data fetch:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProductTypes();
+
+    initialFetch();
+
+    // Set up interval for random five products
+    const intervalId = setInterval(fetchRandomFive, 5000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   if (loading) {
@@ -44,8 +73,8 @@ const Homepage = () => {
 
   return (
     <div className='w-full min-h-screen bg-hippie-green-50'>
-      <Navbar showSearch={true} showProfile={true}/>
-
+      <Navbar showSearch={true} showProfile={true} showCart={true} showWishlist={true}/>
+      {/* Main Section */}
       <div className='w-[95vw] h-[99vh] md:h-[99vh] lg:h-[99vh] grid grid-cols-2 lg:grid-cols-3 grid-rows-10 lg:grid-rows-3 gap-2 md:gap-5 mx-auto p-2 pt-16 md:pt-20'>
         {/* Image 1 */}
         {productTypes[0] && (
@@ -76,11 +105,13 @@ const Homepage = () => {
         {/* Center Block */}
         <div className='col-span-2 lg:col-span-1 row-span-4 lg:row-span-2 bg-neutral-100 border rounded-2xl drop-shadow-2xl flex flex-col items-center justify-center gap-3 text-center p-4 border-gray-200'>
           <img src="/logoName.png" alt="Logo" className='w-1/2 lg:w-8/12 h-auto' draggable={false} />
-          <h2 className='text-sm md:text-lg lg:text-2xl text-gray-700 font-semibold px-5' style={{ fontFamily: 'Lugrasimo', lineHeight: '2' }}>
+          <h2 className='text-sm md:text-lg lg:text-xl xl:text-2xl text-gray-700 font-semibold px-5' style={{ fontFamily: 'Lugrasimo', lineHeight: '2' }}>
             Crafted by Regions, Connected by Stories
           </h2>
           <button
-            onClick={() => navigate('/products')}
+            onClick={() => {
+              document.getElementById('featured-products').scrollIntoView({ behavior: 'smooth' });
+            }}
             className='mt-2 px-10 py-3 bg-hippie-green-600 hover:bg-hippie-green-700 transition text-white text-sm md:text-base font-medium rounded-lg'
           >
             Explore Collections
@@ -140,6 +171,7 @@ const Homepage = () => {
         )}
       </div>
 
+      {/* Categories Section */}
       <div className='w-full flex flex-col items-center gap-10 my-5 bg-hippie-green-400 py-20 px-5 md:px-10'>
         <h1 className='text-3xl font-bold text-white' style={{ fontFamily: 'Lugrasimo' }}>CATEGORIES</h1>
         <div className='w-full grid grid-cols-2 lg:grid-cols-4 gap-5'>
@@ -161,6 +193,46 @@ const Homepage = () => {
           ))}
         </div>
       </div>
+
+      {/* Random Products Section */}
+      <div id="featured-products" className='w-full flex flex-col items-center gap-10 my-5 py-20 px-5 md:px-10'>
+        <h1 className='text-3xl font-bold text-hippie-green-800' style={{ fontFamily: 'Lugrasimo' }}>FEATURED PRODUCTS</h1>
+        <div className='w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+          {randomProducts.map((product, index) => (
+            <div
+              key={index}
+              onClick={() => navigate(`/search/type/${product._id}`)}
+              className='bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer'
+            >
+              <div className='relative h-48 overflow-hidden'>
+                <div className='absolute top-2 left-2 z-10'>
+                  <div className='bg-hippie-green-100 px-3 py-1 rounded-full'>
+                    <p className='text-sm text-hippie-green-800 font-medium'>
+                      {product.category}
+                    </p>
+                  </div>
+                </div>
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className='w-full h-full object-cover transform hover:scale-110 transition-transform duration-300'
+                />
+              </div>
+              <div className='p-4 gap-2 flex flex-col justify-between'>
+                <h3 className='text-lg font-semibold text-gray-800 line-clamp-1'>{product.name}</h3>
+                <div className='inline-block italic font-semibold py-1 rounded-full'>
+                  <p className='text-sm text-blue-700 font-medium'>
+                    {product.city}, {product.state}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -117,7 +117,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-        <Navbar showProfile={true} showWishlist={true}/>
+        <Navbar showProfile={true} showWishlist={true} showCart={false} />
         <div className="container mx-auto px-4 pt-24 pb-16">
         <h1 className="text-2xl md:text-3xl font-bold text-hippie-green-800 mb-6 md:mb-8">Shopping Cart</h1>
         

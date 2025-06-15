@@ -9,8 +9,10 @@ import Register from './pages/Register'
 import Profile from './pages/Profile'
 import WishList from './pages/WishList'
 import Checkout from './pages/Checkout'
+import NotFound from './pages/NotFound'
 import { SearchProvider } from './contexts/searchContext'
 import { AuthProvider } from './contexts/authContext'
+
 function App() {
     return (
         <BrowserRouter>
@@ -48,7 +50,7 @@ function App() {
                     } path='/product/:p/:v' />
 
                     <Route element={<Checkout />} path='/checkout' />
-                    <Route element={<h1>Not Found</h1>} path='*' />
+                    <Route element={<NotFound />} path='*' />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

@@ -13,11 +13,13 @@ const OrderDetails = ({
 }) => {
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
+    const [selectedRating, setSelectedRating] = useState(0);
     const [orderDetailsLoading, setOrderDetailsLoading] = useState(false);
     const [showCancelPopup, setShowCancelPopup] = useState(false);
     const [showRefundPopup, setShowRefundPopup] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
     const [refundReason, setRefundReason] = useState('');
+    const [message, setMessage] = useState('');
 
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -42,58 +44,80 @@ const OrderDetails = ({
     const renderStars = (rating, interactive = false, size = 'text-lg') => {
         return (
             <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                        key={star}
-                        className={`${size} cursor-pointer ${
-                            interactive
-                                ? 'hover:scale-110 transition-transform'
-                                : ''
-                        } ${
-                            star <= (interactive ? hoverRating : rating)
-                                ? 'text-yellow-400'
-                                : 'text-gray-300'
-                        }`}
-                        onClick={() => interactive && setRating(star)}
-                        onMouseEnter={() => interactive && setHoverRating(star)}
-                        onMouseLeave={() => interactive && setHoverRating(0)}
-                    >
-                        {star <= (interactive ? hoverRating : rating) ? (
-                            <FaStar />
-                        ) : (
-                            <FaRegStar />
-                        )}
-                    </span>
-                ))}
+                {[1, 2, 3, 4, 5].map((star) => {
+                    const isFilled = interactive 
+                        ? (hoverRating ? star <= hoverRating : star <= selectedRating)
+                        : star <= rating;
+
+                    return (
+                        <span
+                            key={star}
+                            className={`${size} cursor-pointer ${
+                                interactive ? 'hover:scale-110 transition-transform' : ''
+                            } ${isFilled ? 'text-yellow-400' : 'text-gray-300'}`}
+                            onClick={() => {
+                                if (interactive) {
+                                    setSelectedRating(star);
+                                    setRating(star);
+                                    setHoverRating(0);
+                                }
+                            }}
+                            onMouseEnter={() => interactive && setHoverRating(star)}
+                            onMouseLeave={() => interactive && setHoverRating(0)}
+                        >
+                            {isFilled ? <FaStar /> : <FaRegStar />}
+                        </span>
+                    );
+                })}
             </div>
         );
     };
 
-    const handleRateProduct = async (orderId, itemId, rating) => {
+    const handleRateProduct = async (orderId, itemId) => {
+        if (!selectedRating) {
+            setMessage('Please select a rating before submitting');
+            return;
+        }
+
         try {
+            setOrderDetailsLoading(true);
             const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/user/order/${orderId}/item/${itemId}/rate`,
-                { rating },
+                `${import.meta.env.VITE_SERVER_URL}/user/order/order/${orderId}/item/${itemId}/rate`,
+                { rating: selectedRating },
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`
                     }
                 }
             );
+            
             if (response.data.success) {
+                setMessage('Rating submitted successfully!');
+                // Update the local order data with the new rating
+                if (selectedOrder && selectedOrder.item) {
+                    selectedOrder.item.rating = selectedRating;
+                }
                 onOrderUpdate();
-                setShowOrderDetails(false);
-                setRating(0);
+                setTimeout(() => {
+                    setShowOrderDetails(false);
+                    setRating(0);
+                    setSelectedRating(0);
+                    setMessage('');
+                }, 1500);
             }
         } catch (error) {
-            console.error('Error rating product:', error);
+            console.error('Error rating product:', error.message);
+            setMessage(error.response?.data?.message || 'Failed to submit rating. Please try again.');
+        } finally {
+            setOrderDetailsLoading(false);
         }
     };
 
     const handleCancelOrder = async () => {
         try {
+            setOrderDetailsLoading(true);
             const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/user/order/${selectedOrder._id}/item/${selectedOrder.item._id}/cancel`,
+                `${import.meta.env.VITE_SERVER_URL}/user/order/order/${selectedOrder._id}/item/${selectedOrder.item._id}/cancel`,
                 { reason: cancelReason },
                 {
                     headers: {
@@ -102,20 +126,28 @@ const OrderDetails = ({
                 }
             );
             if (response.data.success) {
+                setMessage('Order cancelled successfully!');
                 onOrderUpdate();
-                setShowCancelPopup(false);
-                setShowOrderDetails(false);
-                setCancelReason('');
+                setTimeout(() => {
+                    setShowCancelPopup(false);
+                    setShowOrderDetails(false);
+                    setCancelReason('');
+                    setMessage('');
+                }, 1500);
             }
         } catch (error) {
             console.error('Error cancelling order:', error);
+            setMessage('Failed to cancel order. Please try again.');
+        } finally {
+            setOrderDetailsLoading(false);
         }
     };
 
     const handleRefundRequest = async () => {
         try {
+            setOrderDetailsLoading(true);
             const response = await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/user/order/${selectedOrder._id}/item/${selectedOrder.item._id}/refund`,
+                `${import.meta.env.VITE_SERVER_URL}/user/order/order/${selectedOrder._id}/item/${selectedOrder.item._id}/refund`,
                 { reason: refundReason },
                 {
                     headers: {
@@ -124,13 +156,20 @@ const OrderDetails = ({
                 }
             );
             if (response.data.success) {
+                setMessage('Refund request submitted successfully!');
                 onOrderUpdate();
-                setShowRefundPopup(false);
-                setShowOrderDetails(false);
-                setRefundReason('');
+                setTimeout(() => {
+                    setShowRefundPopup(false);
+                    setShowOrderDetails(false);
+                    setRefundReason('');
+                    setMessage('');
+                }, 1500);
             }
         } catch (error) {
             console.error('Error requesting refund:', error);
+            setMessage('Failed to submit refund request. Please try again.');
+        } finally {
+            setOrderDetailsLoading(false);
         }
     };
 
@@ -160,6 +199,15 @@ const OrderDetails = ({
                     </div>
                 ) : (
                     <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+                        {/* Message Display */}
+                        {message && (
+                            <div className={`mb-4 p-3 rounded-lg ${
+                                message.includes('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                            }`}>
+                                {message}
+                            </div>
+                        )}
+
                         {/* Product Details */}
                         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                             <div className="w-full sm:w-32 h-32 rounded-lg bg-gray-50 flex items-center justify-center">
@@ -199,12 +247,15 @@ const OrderDetails = ({
                                             </h4>
                                             <div className="flex items-center gap-4">
                                                 {renderStars(selectedOrder.item.rating || 0, !selectedOrder.item.rating, 'text-2xl')}
-                                                {!selectedOrder.item.rating && rating > 0 && (
+                                                {!selectedOrder.item.rating && selectedRating > 0 && (
                                                     <button
-                                                        onClick={() => handleRateProduct(selectedOrder._id, selectedOrder.item._id, rating)}
-                                                        className="px-4 py-2 rounded-lg font-medium bg-hippie-green-600 text-white hover:bg-hippie-green-700 transition-colors"
+                                                        onClick={() => handleRateProduct(selectedOrder._id, selectedOrder.item._id)}
+                                                        disabled={orderDetailsLoading}
+                                                        className={`px-4 py-2 rounded-lg font-medium bg-hippie-green-600 text-white hover:bg-hippie-green-700 transition-colors ${
+                                                            orderDetailsLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                                        }`}
                                                     >
-                                                        Submit Rating
+                                                        {orderDetailsLoading ? 'Submitting...' : 'Submit Rating'}
                                                     </button>
                                                 )}
                                             </div>
@@ -332,14 +383,14 @@ const OrderDetails = ({
                         <div className="flex gap-4">
                             <button
                                 onClick={handleCancelOrder}
-                                disabled={!cancelReason.trim()}
+                                disabled={!cancelReason.trim() || orderDetailsLoading}
                                 className={`flex-1 py-2 rounded-lg font-medium ${
-                                    !cancelReason.trim()
+                                    !cancelReason.trim() || orderDetailsLoading
                                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                         : 'bg-red-600 text-white hover:bg-red-700'
                                 }`}
                             >
-                                Confirm Cancellation
+                                {orderDetailsLoading ? 'Processing...' : 'Confirm Cancellation'}
                             </button>
                             <button
                                 onClick={() => {
@@ -371,14 +422,14 @@ const OrderDetails = ({
                         <div className="flex gap-4">
                             <button
                                 onClick={handleRefundRequest}
-                                disabled={!refundReason.trim()}
+                                disabled={!refundReason.trim() || orderDetailsLoading}
                                 className={`flex-1 py-2 rounded-lg font-medium ${
-                                    !refundReason.trim()
+                                    !refundReason.trim() || orderDetailsLoading
                                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                         : 'bg-blue-600 text-white hover:bg-blue-700'
                                 }`}
                             >
-                                Submit Request
+                                {orderDetailsLoading ? 'Processing...' : 'Submit Request'}
                             </button>
                             <button
                                 onClick={() => {

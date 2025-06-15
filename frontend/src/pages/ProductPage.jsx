@@ -19,17 +19,23 @@ const ProductPage = () => {
   const [productType, setProductType] = useState(null);
   const [seller, setSeller] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
+  const [sameStateProducts, setSameStateProducts] = useState([]);
+  const [sameCategoryProducts, setSameCategoryProducts] = useState([]);
   const [loading, setLoading] = useState({
     product: true,
     seller: false,
     productType: false,
-    similarProducts: false
+    similarProducts: false,
+    sameStateProducts: false,
+    sameCategoryProducts: false
   });
   const [error, setError] = useState({
     product: null,
     seller: null,
     productType: null,
-    similarProducts: null
+    similarProducts: null,
+    sameStateProducts: null,
+    sameCategoryProducts: null
   });
   const [wishlisted, setWishlisted] = useState(false);
   const [pincode, setPincode] = useState(700040);
@@ -82,6 +88,10 @@ const ProductPage = () => {
 
         // Fetch similar products
         fetchSimilarProducts(p);
+        
+        // Fetch same state and category products
+        fetchSameStateProducts(productResponse.data.productType);
+        fetchSameCategoryProducts(p);
       } catch (err) {
         console.error('Error fetching product data:', err);
         setError(prev => ({ ...prev, product: err.response?.data?.message || 'Error fetching product data' }));
@@ -138,6 +148,37 @@ const ProductPage = () => {
       setError(prev => ({ ...prev, similarProducts: err.response?.data?.message || 'Error fetching similar products' }));
     } finally {
       setLoading(prev => ({ ...prev, similarProducts: false }));
+    }
+  };
+
+  // Add these new fetch functions after fetchSimilarProducts
+  const fetchSameStateProducts = async (productTypeId) => {
+    try {
+      setLoading(prev => ({ ...prev, sameStateProducts: true }));
+      setError(prev => ({ ...prev, sameStateProducts: null }));
+      
+      const response = await axios.get(`${SERVER_URL}/regio-store/same-state-products/${productTypeId}`);
+      setSameStateProducts(response.data);
+    } catch (err) {
+      console.error('Error fetching same state products:', err);
+      setError(prev => ({ ...prev, sameStateProducts: err.response?.data?.message || 'Error fetching same state products' }));
+    } finally {
+      setLoading(prev => ({ ...prev, sameStateProducts: false }));
+    }
+  };
+
+  const fetchSameCategoryProducts = async (productId) => {
+    try {
+      setLoading(prev => ({ ...prev, sameCategoryProducts: true }));
+      setError(prev => ({ ...prev, sameCategoryProducts: null }));
+      
+      const response = await axios.get(`${SERVER_URL}/regio-store/same-category-products/${productId}`);
+      setSameCategoryProducts(response.data);
+    } catch (err) {
+      console.error('Error fetching same category products:', err);
+      setError(prev => ({ ...prev, sameCategoryProducts: err.response?.data?.message || 'Error fetching same category products' }));
+    } finally {
+      setLoading(prev => ({ ...prev, sameCategoryProducts: false }));
     }
   };
 
@@ -236,7 +277,7 @@ const ProductPage = () => {
           {/* Product Image */}
           <div className='lg:w-[50%] w-full lg:h-[87vh] md:h-[90vh] h-[85vh] flex lg:flex-row-reverse flex-col items-center justify-between lg:sticky top-20 md:gap-5 gap-3'>
             <img 
-              className='w-full h-[90%] md:h-[80%] lg:h-full object-cover rounded-lg' 
+              className='w-full h-[90%] md:h-[80%] lg:h-full object-cover rounded-lg aspect-[3/4]' 
               src={selectedVariety.images[currentImage]} 
               alt={product.productName} 
             />
@@ -282,6 +323,7 @@ const ProductPage = () => {
             {/* Variations */}
             <div className='w-full flex flex-col items-start gap-3'>
               <p className='text-gray-800 font-semibold text-lg'>Product Variants</p>
+              <p>{selectedVariety.title}</p>
               <div className='w-full overflow-x-auto'>
                 <div className='w-full flex items-center justify-start gap-5'>
                   {product.varieties.map((variety, index) => (
@@ -296,7 +338,6 @@ const ProductPage = () => {
                       >
                         <img src={variety.images[0]} className='w-16 md:h-20 aspect-[3/4] rounded-xl' alt="" />
                       </button>
-                      <p className="text-sm text-gray-600 font-medium text-center">{variety.title}</p>
                     </div>
                   ))}
                 </div>
@@ -451,7 +492,7 @@ const ProductPage = () => {
                       {seller?.products?.map((product) => (
                         <div 
                           key={product.product_id} 
-                          className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer min-w-[280px]'
+                          className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-[200px] md:w-[280px]'
                           onClick={() => handleProductClick(product.product_id, product.variety_id)}
                         >
                           <img 
@@ -500,7 +541,7 @@ const ProductPage = () => {
                   {similarProducts.map((product) => (
                     <div 
                       key={product.product_id} 
-                      className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer min-w-[280px]'
+                      className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-[200px] md:w-[280px]'
                       onClick={() => handleProductClick(product.product_id, product.variety_id)}
                     >
                       <img 
@@ -528,6 +569,104 @@ const ProductPage = () => {
               </div>
             ) : (
               <div className="text-gray-500 text-center py-8">No similar products found</div>
+            )}
+          </div>
+        </div>
+
+        {/* Same State Products */}
+        <div className='w-full h-full flex flex-col items-center justify-center gap-10 xl:p-10 lg:p-10 md:p-10 p-5 mt-10'>
+          <div className='w-full max-w-full'>
+            <h1 className='text-3xl font-bold text-gray-800 mb-8'>More from {sameStateProducts.state}</h1>
+            
+            {loading.sameStateProducts ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hippie-green-600"></div>
+              </div>
+            ) : error.sameStateProducts ? (
+              <div className="text-red-500 text-center py-8">{error.sameStateProducts}</div>
+            ) : sameStateProducts.products?.length > 0 ? (
+              <div className='w-full overflow-x-auto pb-4'>
+                <div className='flex gap-6 min-w-min'>
+                  {sameStateProducts.products.map((product) => (
+                    <div 
+                      key={product.product_id} 
+                      className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-[200px] md:w-[280px]'
+                      onClick={() => handleProductClick(product.product_id, product.variety_id)}
+                    >
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.productName}
+                        className='w-full h-48 md:h-64 object-cover'
+                      />
+                      <div className='p-4'>
+                        <h3 className='text-lg font-semibold text-gray-800 mb-2 line-clamp-2'>{product.productName}</h3>
+                        <div className='flex items-center gap-2 mb-2'>
+                          <div className='px-2 py-1 bg-hippie-green-100 text-hippie-green-800 flex items-center justify-center gap-1 text-xs font-bold rounded-full'>
+                            <span>{product.rating}</span>
+                            <FaStar className='text-xs' />
+                          </div>
+                          <p className='text-sm text-gray-600'>({product.ratingCount})</p>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-lg font-bold text-hippie-green-700'>₹{product.price}</span>
+                          <span className='text-sm text-gray-500 line-through'>₹{product.mrp}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-center py-8">No products found from this state</div>
+            )}
+          </div>
+        </div>
+
+        {/* Same Category Products */}
+        <div className='w-full h-full flex flex-col items-center justify-center gap-10 xl:p-10 lg:p-10 md:p-10 p-5 mt-10'>
+          <div className='w-full max-w-full'>
+            <h1 className='text-3xl font-bold text-gray-800 mb-8'>You May Also Like</h1>
+            
+            {loading.sameCategoryProducts ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-hippie-green-600"></div>
+              </div>
+            ) : error.sameCategoryProducts ? (
+              <div className="text-red-500 text-center py-8">{error.sameCategoryProducts}</div>
+            ) : sameCategoryProducts.products?.length > 0 ? (
+              <div className='w-full overflow-x-auto pb-4'>
+                <div className='flex gap-6 min-w-min'>
+                  {sameCategoryProducts.products.map((product) => (
+                    <div 
+                      key={product.product_id} 
+                      className='bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer w-[200px] md:w-[280px]'
+                      onClick={() => handleProductClick(product.product_id, product.variety_id)}
+                    >
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.productName}
+                        className='w-full h-48 md:h-64 object-cover'
+                      />
+                      <div className='p-4'>
+                        <h3 className='text-lg font-semibold text-gray-800 mb-2 line-clamp-2'>{product.productName}</h3>
+                        <div className='flex items-center gap-2 mb-2'>
+                          <div className='px-2 py-1 bg-hippie-green-100 text-hippie-green-800 flex items-center justify-center gap-1 text-xs font-bold rounded-full'>
+                            <span>{product.rating}</span>
+                            <FaStar className='text-xs' />
+                          </div>
+                          <p className='text-sm text-gray-600'>({product.ratingCount})</p>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-lg font-bold text-hippie-green-700'>₹{product.price}</span>
+                          <span className='text-sm text-gray-500 line-through'>₹{product.mrp}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-center py-8">No similar products found in this category</div>
             )}
           </div>
         </div>

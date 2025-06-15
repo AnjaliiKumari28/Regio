@@ -120,7 +120,7 @@ const Checkout = () => {
         console.log(cartItems)
     },[cartItems])
 
-    const handlePaymentSuccess = async () => {
+    const handlePaymentSuccess = async (paymentMethod) => {
         try {
             // Prepare order items from cart items
             const orderItems = cartItems.map(item => ({
@@ -139,7 +139,7 @@ const Checkout = () => {
             const orderData = {
                 items: orderItems,
                 shippingAddress: selectedAddress,
-                paymentMethod: 'UPI',
+                paymentMethod: paymentMethod,
                 totalAmount: totalPrice
             };
 
