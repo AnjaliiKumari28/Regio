@@ -8,10 +8,11 @@ import Dashboard from './pages/Dashboard';
 import AddProductType from './pages/AddProductType';
 import AllProductTypes from './pages/AllProductTypes';
 import AddProduct from './pages/AddProduct';
-import { AuthProvider, useAuth } from './contexts/authContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Store from './pages/Store';
 import Products from './pages/Products';
 import EditProduct from './pages/EditProduct';
+import Orders from './pages/Orders';
 const ProtectedRoute = () => {
   const { seller, isLoading } = useAuth();
 
@@ -43,6 +44,7 @@ function App() {
             <Route path='/store' element={<Store />} />
             <Route path='/my-products' element={<Products />} />
             <Route path='/edit-product/:productId' element={<EditProduct />} />
+            <Route path='/orders' element={<Orders />} />
           </Route>
           
           

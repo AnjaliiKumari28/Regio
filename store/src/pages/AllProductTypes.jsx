@@ -19,7 +19,7 @@ const AllProductTypes = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`${SERVER}/product-types`);
+            const response = await axios.get(`${SERVER}/product-types/product-types`);
             if (response.data) {
                 setProductTypes(response.data);
             }

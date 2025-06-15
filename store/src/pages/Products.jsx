@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/authContext';
+import { useAuth } from '../contexts/AuthContext';
 import { IoAddCircleOutline, IoClose, IoStar } from "react-icons/io5";
 import { MdModeEdit } from "react-icons/md";
 
@@ -73,7 +73,7 @@ const ProductCard = ({ product, onViewDetails }) => {
                     <span className="text-lg font-semibold text-hippie-green-600">{getLowestPrice()}</span>
                     <div className="flex items-center">
                         <IoStar className="text-yellow-400 mr-1" />
-                        <span className="text-sm text-gray-600">{product.rating} ({product.ratingCount})</span>
+                        <span className="text-sm text-gray-600">{product.rating.toFixed(1)} ({product.ratingCount})</span>
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@ const ProductDetailsModal = ({ product, onClose }) => {
                                     <span className="text-sm font-medium text-gray-600 block mb-1">Rating</span>
                                     <div className="flex items-center">
                                         <IoStar className="text-yellow-400 mr-1" />
-                                        <span className="text-gray-800 font-semibold">{product.rating} ({product.ratingCount} ratings)</span>
+                                        <span className="text-gray-800 font-semibold">{product.rating.toFixed(1)} ({product.ratingCount} ratings)</span>
                                     </div>
                                 </div>
                             </div>
