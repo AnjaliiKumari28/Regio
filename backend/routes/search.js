@@ -1,6 +1,6 @@
 import express from 'express';
 import Product from '../models/Products.js';
-
+import ProductType from '../models/ProductType.js';
 const router = express.Router();
 
 // Search products by category
@@ -222,5 +222,157 @@ router.get('/query/:searchQuery', async (req, res) => {
     }
 });
 
+// Recommend products based on multiple past queries
+router.post('/recommendations', async (req, res) => {
+    try {
+        const { queries } = req.body;
+
+        if (!Array.isArray(queries) || queries.length === 0) {
+            return res.status(400).json({ message: 'Query array is required' });
+        }
+
+        // Assign boost value based on query index (earlier = higher boost)
+        const boostedQueries = queries.slice(0, 10).map((query, index) => {
+            const boostValue = 10 - index; // Index 0 = boost 10, Index 9 = boost 1
+
+            return [
+                {
+                    text: {
+                        query,
+                        path: [
+                            "productName",
+                            "description",
+                            "productTypeName",
+                            "productCategory",
+                            "varieties.title",
+                            "varieties.options.label"
+                        ],
+                        fuzzy: {
+                            maxEdits: 2,
+                            prefixLength: 2,
+                            maxExpansions: 50
+                        },
+                        score: { boost: { value: boostValue * 2 } }
+                    }
+                },
+                {
+                    autocomplete: {
+                        query,
+                        path: "productName",
+                        tokenOrder: "sequential",
+                        fuzzy: {
+                            maxEdits: 1,
+                            prefixLength: 2
+                        },
+                        score: { boost: { value: boostValue } }
+                    }
+                }
+            ];
+        }).flat();
+
+        const pipeline = [
+            {
+                $search: {
+                    index: "product_search",
+                    compound: {
+                        should: boostedQueries,
+                        minimumShouldMatch: 1
+                    }
+                }
+            },
+            {
+                $match: {
+                    isActive: true
+                }
+            },
+            {
+                $limit: 30
+            },
+            {
+                $project: {
+                    _id: 1,
+                    productName: 1,
+                    description: 1,
+                    productTypeName: 1,
+                    productCategory: 1,
+                    varieties: 1,
+                    rating: 1,
+                    ratingCount: 1,
+                    score: { $meta: "searchScore" }
+                }
+            }
+        ];
+
+        const results = await Product.aggregate(pipeline);
+
+        res.json({
+            recommended: results,
+            total: results.length
+        });
+
+    } catch (error) {
+        console.error('Error getting recommendations:', error);
+        res.status(500).json({ message: 'Error getting recommendations', error: error.message });
+    }
+});
+
+router.get('/suggestions', async (req, res) => {
+    try {
+        const query = req.query.q;
+        console.log(query)
+        if (!query || query.trim().length === 0) {
+            return res.status(400).json({ message: 'Query parameter "q" is required.' });
+        }
+
+        const pipeline = [
+            {
+                $search: {
+                    index: 'suggestions',
+                    compound: {
+                        should: [
+                            {
+                                autocomplete: {
+                                    query: query,
+                                    path: 'name',
+                                    fuzzy: {
+                                        maxEdits: 1,
+                                        prefixLength: 1
+                                    }
+                                }
+                            },
+                            {
+                                autocomplete: {
+                                    query: query,
+                                    path: 'description',
+                                    fuzzy: {
+                                        maxEdits: 1,
+                                        prefixLength: 1
+                                    }
+                                }
+                            }
+                        ],
+                        minimumShouldMatch: 1
+                    }
+                }
+
+            },
+            { $limit: 10 },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    image: 1
+                }
+            }
+        ];
+
+        const results = await ProductType.aggregate(pipeline);
+        res.json({ suggestions: results });
+
+    } catch (error) {
+        console.error('Product type suggestion error:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+});
 
 export default router;
