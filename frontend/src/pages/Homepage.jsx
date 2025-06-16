@@ -3,11 +3,13 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { FaStar } from 'react-icons/fa';
 
 const Homepage = () => {
   const [productTypes, setProductTypes] = useState([]);
   const [randomProducts, setRandomProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState([]);
   const navigate = useNavigate();
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const categories = [
@@ -21,6 +23,40 @@ const Homepage = () => {
     navigate(`/search/category/${categoryName}`);
   };
 
+  const flattenProduct = (product) => {
+    return product.varieties.map(variety => {
+      const firstOption = variety.options[0] || {};
+      return {
+        _id: `${product._id}${variety._id}`,
+        productId: product._id,
+        varietyId: variety._id,
+        name: product.productName,
+        varietyTitle: variety.title,
+        images: variety.images,
+        rating: product.rating,
+        ratingCount: product.ratingCount,
+        type: product.productTypeName,
+        price: firstOption.price || 0,
+        mrp: firstOption.mrp || 0,
+      };
+    });
+  };
+
+  const fetchRecommendationsFromHistory = async () => {
+    const queries = JSON.parse(localStorage.getItem('searchHistory')) || [];
+
+    // Don't call backend if empty
+    if (!Array.isArray(queries) || queries.length === 0) return [];
+
+    try {
+      const response = await axios.post(`${SERVER_URL}/search/recommendations`, { queries });
+      const flattenedProducts = response.data.recommended.flatMap(flattenProduct);
+      setRecommendations(flattenedProducts);
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      return [];
+    }
+  };
   // Function to fetch random 5 products
   const fetchRandomFive = async () => {
     try {
@@ -46,7 +82,7 @@ const Homepage = () => {
       setLoading(true);
       try {
         // Fetch both random five and twenty products initially
-        await Promise.all([fetchRandomFive(), fetchRandomTwenty()]);
+        await Promise.all([fetchRandomFive(), fetchRandomTwenty(), fetchRecommendationsFromHistory()]);
       } catch (error) {
         console.error('Error in initial data fetch:', error);
       } finally {
@@ -73,7 +109,7 @@ const Homepage = () => {
 
   return (
     <div className='w-full min-h-screen bg-hippie-green-50'>
-      <Navbar showSearch={true} showProfile={true} showCart={true} showWishlist={true}/>
+      <Navbar showSearch={true} showProfile={true} showCart={true} showWishlist={true} />
       {/* Main Section */}
       <div className='w-[95vw] h-[99vh] md:h-[99vh] lg:h-[99vh] grid grid-cols-2 lg:grid-cols-3 grid-rows-10 lg:grid-rows-3 gap-2 md:gap-5 mx-auto p-2 pt-16 md:pt-20'>
         {/* Image 1 */}
@@ -194,6 +230,92 @@ const Homepage = () => {
         </div>
       </div>
 
+      <div className='w-full flex flex-col items-center gap-10 my-5 py-20 px-5 md:px-10'>
+        <h1 className='text-3xl font-bold text-hippie-green-800' style={{ fontFamily: 'Lugrasimo' }}>Continue Shopping</h1>
+        <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-8'>
+          {recommendations.map((item) => (
+            <div
+              onClick={() => {
+                navigate(`/product/${item.productId}/${item.varietyId}`);
+              }}
+              key={item._id}
+              className='group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 cursor-pointer'
+            >
+              {/* Image Container */}
+              <div className='relative aspect-square overflow-hidden'>
+                {item.images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={item.name}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${index === 0 ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    onMouseEnter={(e) => {
+                      let currentIndex = 0;
+                      const totalImages = item.images.length;
+
+                      const switchImage = () => {
+                        // Hide all images
+                        item.images.forEach((_, i) => {
+                          const img = e.target.parentElement.children[i];
+                          img.style.opacity = '0';
+                        });
+
+                        // Show current image
+                        const currentImg = e.target.parentElement.children[currentIndex];
+                        currentImg.style.opacity = '1';
+
+                        // Move to next image
+                        currentIndex = (currentIndex + 1) % totalImages;
+
+                        // Schedule next switch
+                        e.target.hoverInterval = setTimeout(switchImage, 1500);
+                      };
+
+                      // Start the sequence
+                      e.target.hoverInterval = setTimeout(switchImage, 500);
+                    }}
+                    onMouseLeave={(e) => {
+                      // Clear the interval
+                      clearTimeout(e.target.hoverInterval);
+
+                      // Reset to first image
+                      item.images.forEach((_, i) => {
+                        const img = e.target.parentElement.children[i];
+                        img.style.opacity = i === 0 ? '1' : '0';
+                      });
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Product Info */}
+              <div className='p-3 sm:p-4 space-y-2'>
+                <h3 className='text-sm text-gray-900 line-clamp-2 h-10 font-semibold'>
+                  {item.name}
+                </h3>
+
+                <div className='flex items-center justify-between pt-2'>
+                  <div className=' flex flex-col items-center gap-1'>
+                    <p className='text-base sm:text-lg font-semibold text-gray-900'>₹{item.price}</p>
+                    {item.mrp > item.price && (
+                      <p className='text-xs text-gray-500 line-through'>₹{item.mrp}</p>
+                    )}
+                  </div>
+
+                  <div className='flex flex-col items-center gap-1'>
+                    <div className='flex items-center gap-1 bg-hippie-green-50 px-2 py-1 rounded-full'>
+                      <span className='text-sm font-medium text-hippie-green-700'>{(item.rating).toFixed(1)}</span>
+                      <FaStar className='text-yellow-400 text-sm' />
+                    </div>
+                    <span className='text-xs text-gray-500'>({item.ratingCount})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       {/* Random Products Section */}
       <div id="featured-products" className='w-full flex flex-col items-center gap-10 my-5 py-20 px-5 md:px-10'>
         <h1 className='text-3xl font-bold text-hippie-green-800' style={{ fontFamily: 'Lugrasimo' }}>FEATURED PRODUCTS</h1>

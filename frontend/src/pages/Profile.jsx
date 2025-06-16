@@ -42,6 +42,8 @@ const Profile = () => {
     const [orderDetailsLoading, setOrderDetailsLoading] = useState(false);
     const navigate = useNavigate();
 
+    
+
     useEffect(() => {
         if (!user) {
             setShowLoginPrompt(true);
@@ -446,6 +448,7 @@ const Profile = () => {
                                     </div>
                                 </div>
                             </div>
+                            
                         </div>
                     </div>
                 ))}

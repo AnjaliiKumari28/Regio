@@ -17,7 +17,7 @@ const flattenProduct = (product) => {
     return product.varieties.map(variety => {
         // Get the first option for price and mrp
         const firstOption = variety.options[0] || {};
-        
+
         return {
             _id: `${product._id}${variety._id}`, // Unique ID for each variety
             productId: product._id,
@@ -46,8 +46,23 @@ export const SearchProvider = ({ children }) => {
             setError(null);
             const encodedQuery = encodeURIComponent(query);
             const response = await axios.get(`${SERVER_URL}/search/query/${encodedQuery}`);
+
             const flattenedProducts = response.data.products.flatMap(flattenProduct);
             setResults(flattenedProducts);
+
+            // ✅ If results exist, save query in history
+            if (flattenedProducts.length > 0) {
+                const historyKey = 'searchHistory';
+                const prevHistory = JSON.parse(localStorage.getItem(historyKey)) || [];
+
+                // Avoid duplicates (case-insensitive)
+                const newHistory = [query, ...prevHistory.filter(q => q.toLowerCase() !== query.toLowerCase())];
+
+                // Limit to 10 entries
+                if (newHistory.length > 10) newHistory.length = 10;
+
+                localStorage.setItem(historyKey, JSON.stringify(newHistory));
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Error searching products');
             setResults([]);
@@ -55,6 +70,7 @@ export const SearchProvider = ({ children }) => {
             setLoading(false);
         }
     }, []);
+
 
     // Search by category
     const searchByCategory = useCallback(async (category) => {
